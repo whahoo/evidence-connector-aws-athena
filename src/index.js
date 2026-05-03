@@ -105,6 +105,7 @@ const mapAthenaTypeToEvidenceType = column => {
     case 'double':
     case 'float':
     case 'real':
+	case 'decimal':
       type = EvidenceType.NUMBER;
       break;
     case 'date':
