@@ -108,9 +108,16 @@ const mapAthenaTypeToEvidenceType = column => {
 	case 'decimal':
       type = EvidenceType.NUMBER;
       break;
+    // Dates and timestamps are deliberately kept as STRINGS. The report layer
+    // interpolates input values into SQL text ('${inputs.x.value}') and the
+    // Dropdown default-matching uses Set identity — both break with JS Date
+    // objects. Athena returns ISO strings ('2026-06-01'), which compare, join
+    // and sort correctly as varchar. (Trino 'timestamp with time zone' already
+    // fell through to STRING via the default case; this makes 'date' and plain
+    // 'timestamp' consistent with that long-standing behaviour.)
     case 'date':
     case 'timestamp':
-      type = EvidenceType.DATE;
+      type = EvidenceType.STRING;
       break;
     case 'string':
     case 'char':
