@@ -154,6 +154,16 @@ function mapQueryResults(queryResults) {
 
   const columnTypes = columns.map(column =>  mapAthenaTypeToEvidenceType(column));
 
+  // Evidence's parquet writer skips the output file entirely for zero-row results,
+  // leaving an invalid/missing parquet that breaks the downstream DuckDB build
+  // ("File ... too small to be a Parquet file"). Emit a single all-NULL row so a
+  // schema-valid parquet is always written; pages see one null row instead of a crash.
+  if (mappedRows.length === 0 && columns.length > 0) {
+    const nullRow = {};
+    for (const column of columns) nullRow[column.Name] = null;
+    mappedRows.push(nullRow);
+  }
+
   const output = {
     rows: mappedRows,
     columnTypes: columnTypes,
@@ -210,7 +220,10 @@ export const getRunner = (options) => {
 
       return output
     } catch (error) {
+      // Rethrow so a failed query fails the sources step loudly instead of
+      // silently producing an empty source.
       console.error('Error executing query:', error);
+      throw error;
     }
   };
 };
